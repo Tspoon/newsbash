@@ -19,20 +19,16 @@ set -o pipefail
 RSS=$(curl -L --silent http://www.theweek.co.uk/feeds/all)
 
 # Parse the latest 'Ten Things' article from the RSS feed.
-HTML=$(echo $RSS | xmllint --xpath "string((//item[contains(title, 'Ten Things You Need to Know Today')])[1]/description/text())" -)
+HTML=$(echo $RSS | xmllint --xpath "string(//item[contains(title, 'Ten Things You Need to Know Today')]/description)" -)
 
 # Count the number of items in the 'Ten Things' article. This isn't strictly necessary, but good to check.
 numItems=$(echo $HTML | xmllint --xpath "count(//div[contains(@class, 'story-headline')]/div/div)" -) 
 
 for ((i=1; i<=$numItems; i++))
 do
-	# Parse the title from the RSS XML, then use perl to unescape HTML chars.
-	escapedTitle=$(echo $HTML | xmllint --xpath "(//div[contains(@class, 'story-headline')])[$i]/div/div/text()" -)
-	title=$(echo $escapedTitle | perl -C -MHTML::Entities -pe 'decode_entities($_);' )
-
-	# Same as above, but for body this time.
-	escapedBody=$(echo $HTML | xmllint --xpath "(//div[contains(@class, 'story-body')])[$i]//p/text()" -)
-	body=$(echo $escapedBody | perl -C -MHTML::Entities -pe 'decode_entities($_);')
+	# Parse the title and body from the Ten Things article
+	title=$(echo $HTML | xmllint --xpath "normalize-space(string((//div[contains(@class, 'story-headline')])[$i]))" -)
+	body=$(echo $HTML | xmllint --xpath "normalize-space(string((//div[contains(@class, 'story-body')])[$i]//p))" -)
 
 	# Get the terminal width and define the output string.
 	termWidth=$(tput cols)
